@@ -258,7 +258,7 @@ function App() {
 
 			<div className="content-wrapper">
 				<div className="hero-section">
-					{/* <h1>Media Inspector</h1> */}
+					{/* <h1>FileLens</h1> */}
 					<button
 						className="btn-glass"
 						onClick={handleSelectFile}
@@ -395,6 +395,7 @@ function App() {
 						)}
 
 						{/* 3. Streams List */}
+
 						<div className="glass-panel">
 							<div className="panel-header">
 								<h2>Internal Streams</h2>
@@ -423,20 +424,17 @@ function App() {
 											<div className="stream-meta">
 												<span>#{stream.index}</span>
 
-												{stream.codec_type ===
-													"video" && (
+												{stream.codec_type === "video" && (
 													<>
 														<span className="meta-tag">
-															{stream.width}×
-															{stream.height}
+															{stream.width}×{stream.height}
 														</span>
 														<span className="meta-tag">
-															{
-																stream.r_frame_rate.split(
-																	"/"
-																)[0]
-															}{" "}
-															FPS
+															{(() => {
+																const [num, den] = (stream.r_frame_rate || "0/1").split("/").map(Number);
+																const fps = den !== 0 ? (num / den) : 0;
+																return `${fps % 1 === 0 ? fps : fps.toFixed(2)} FPS`;
+															})()}
 														</span>
 													</>
 												)}
