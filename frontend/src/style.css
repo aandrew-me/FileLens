@@ -1,0 +1,13 @@
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  
+  color-scheme: dark; 
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: transparent !important; 
+  background: transparent !important;
+}
