@@ -95,6 +95,11 @@ Section
     !insertmacro wails.associateCustomProtocols
 
     !insertmacro wails.writeUninstaller
+
+    ; Add Context Menu Entry
+    WriteRegStr HKCR "*\shell\FileLens" "" "Get info"
+    WriteRegStr HKCR "*\shell\FileLens" "Icon" "$INSTDIR\FileLens.exe,0"
+    WriteRegStr HKCR "*\shell\FileLens\command" "" '"$INSTDIR\FileLens.exe" "%1"'
 SectionEnd
 
 Section "uninstall"
@@ -111,4 +116,7 @@ Section "uninstall"
     !insertmacro wails.unassociateCustomProtocols
 
     !insertmacro wails.deleteUninstaller
+    
+    ; Remove Context Menu Entry
+    DeleteRegKey HKCR "*\shell\FileLens"
 SectionEnd

@@ -73,7 +73,7 @@ jobs:
                   cd build/bin
 
                   # Define the output name based on the matrix
-                  OUTPUT_NAME="MediaInfo-${{ matrix.build.name }}"
+                  OUTPUT_NAME="FileLens-${{ matrix.build.name }}"
 
                   if [ "${{ runner.os }}" == "Windows" ]; then
                     # For Windows, rename .exe and zip it
