@@ -1,126 +1,127 @@
 name: Wails build
 
 on:
-    workflow_dispatch:
-        inputs:
-            version:
-                description: "Release Tag (e.g. v1.0.0)"
-                required: true
-                default: "v1.0.0"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release Tag (e.g. v1.0.0)"
+        required: true
+        default: "v1.0.0"
 
 env:
-    NODE_OPTIONS: "--max-old-space-size=4096"
+  NODE_OPTIONS: "--max-old-space-size=4096"
 
 # Permissions are required to create releases
 permissions:
-    contents: write
+  contents: write
 
 jobs:
-    build:
-        strategy:
-            fail-fast: false
-            matrix:
-                build:
-                    - name: "linux-amd64"
-                      platform: "linux/amd64"
-                      os: "ubuntu-22.04"
-                    - name: "windows-amd64"
-                      platform: "windows/amd64"
-                      os: "windows-latest"
-                    - name: "macos-arm64"
-                      platform: "darwin/arm64"
-                      os: "macos-latest"
-                    - name: "macos-amd64"
-                      platform: "darwin/amd64"
-                      os: "macos-15-intel"
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - name: "linux-amd64"
+            platform: "linux/amd64"
+            os: "ubuntu-latest"
+            flags: "-tags webkit2_41"
+          - name: "windows-amd64"
+            platform: "windows/amd64"
+            os: "windows-latest"
+          - name: "macos-arm64"
+            platform: "darwin/arm64"
+            os: "macos-latest"
+          - name: "macos-amd64"
+            platform: "darwin/amd64"
+            os: "macos-26-intel"
 
-        runs-on: ${{ matrix.build.os }}
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  submodules: recursive
+    runs-on: ${{ matrix.build.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
-            - name: Setup Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.21"
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
 
-            - name: Setup Node
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 18
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
 
-            - name: Install Linux Dependencies
-              if: runner.os == 'Linux'
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
 
-            - name: Install Wails
-              run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Cache Wails CLI
+        id: cache-wails
+        uses: actions/cache@v6
+        with:
+          path: ~/go/bin/wails
+          key: wails-${{ matrix.build.name }}-${{ hashFiles('go.mod') }}
+          restore-keys: |
+            wails-${{ matrix.build.name }}-
 
-            - name: Build App
-              shell: bash
-              run: |
-                  # Build with size optimizations (-s -w)
-                  wails build -platform ${{ matrix.build.platform }} -ldflags "-s -w"
+      - name: Install Wails
+        if: steps.cache-wails.outputs.cache-hit != 'true'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-            # We need to rename/compress the files so they have unique names in the Release
-            - name: Package Application
-              shell: bash
-              run: |
-                  cd build/bin
+      - name: Build App
+        shell: bash
+        run: |
+          # Inject the Go binary path so the environment can see Wails even if loaded from cache
+          export PATH=$PATH:$(go env GOPATH)/bin
+          wails build -platform ${{ matrix.build.platform }} -ldflags "-s -w" ${{ matrix.build.flags }}
+      # Renames and compresses the files so they have unique names in the Release
+      - name: Package Application
+        shell: bash
+        run: |
+          cd build/bin
+          OUTPUT_NAME="FileLens-${{ matrix.build.name }}"
 
-                  # Define the output name based on the matrix
-                  OUTPUT_NAME="FileLens-${{ matrix.build.name }}"
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            mv *.exe "${OUTPUT_NAME}.exe"
+            7z a "../${OUTPUT_NAME}.zip" "${OUTPUT_NAME}.exe"
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            APP_NAME=$(find . -maxdepth 1 -name "*.app" -type d -exec basename {} \;)
+            tar -czf "../${OUTPUT_NAME}.tar.gz" "$APP_NAME"
+          else
+            # Safeguard Linux renaming to cleanly target the extensionless binary
+            find . -maxdepth 1 -type f ! -name "*.*" -exec mv {} "${OUTPUT_NAME}" \; 2>/dev/null || true
+            tar -czf "../${OUTPUT_NAME}.tar.gz" "${OUTPUT_NAME}"
+          fi
 
-                  if [ "${{ runner.os }}" == "Windows" ]; then
-                    # For Windows, rename .exe and zip it
-                    mv *.exe "${OUTPUT_NAME}.exe"
-                    7z a "../${OUTPUT_NAME}.zip" "${OUTPUT_NAME}.exe"
-                  elif [ "${{ runner.os }}" == "macOS" ]; then
-                    # For macOS, we must zip the .app bundle
-                    # Find the .app folder name
-                    APP_NAME=$(find . -maxdepth 1 -name "*.app" -type d -exec basename {} \;)
-                    tar -czf "../${OUTPUT_NAME}.tar.gz" "$APP_NAME"
-                  else
-                    # For Linux, rename binary and tar.gz it
-                    # Assuming the binary has no extension
-                    mv * "${OUTPUT_NAME}" || true 
-                    tar -czf "../${OUTPUT_NAME}.tar.gz" "${OUTPUT_NAME}"
-                  fi
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifact-${{ matrix.build.name }}
+          path: |
+            build/*.zip
+            build/*.tar.gz
+          if-no-files-found: error
+          retention-days: 2 # Keeps your GitHub storage clean once the release inherits them
 
-            - name: Upload Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: artifact-${{ matrix.build.name }}
-                  path: build/*.zip
-                  if-no-files-found: ignore # Because Linux/Mac use tar.gz
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: artifact-*
+          merge-multiple: true
+          path: dist
 
-            - name: Upload Artifact (Tar)
-              uses: actions/upload-artifact@v4
-              with:
-                  name: artifact-${{ matrix.build.name }}-tar
-                  path: build/*.tar.gz
-                  if-no-files-found: ignore
-
-    release:
-        needs: build
-        runs-on: ubuntu-latest
-        steps:
-            - name: Download Artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  pattern: artifact-*
-                  merge-multiple: true
-                  path: dist
-
-            - name: Create Draft Release
-              uses: softprops/action-gh-release@v2
-              with:
-                  files: dist/*
-                  draft: true
-                  tag_name: ${{ inputs.version }}
-                  name: Release ${{ inputs.version }}
-                  generate_release_notes: true
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*
+          draft: true
+          tag_name: ${{ inputs.version }}
+          name: Release ${{ inputs.version }}
+          generate_release_notes: true
