@@ -97,9 +97,10 @@ Section
     !insertmacro wails.writeUninstaller
 
     ; Add Context Menu Entry
-    WriteRegStr HKCR "*\shell\FileLens" "" "Get info"
-    WriteRegStr HKCR "*\shell\FileLens" "Icon" "$INSTDIR\FileLens.exe,0"
-    WriteRegStr HKCR "*\shell\FileLens\command" "" '"$INSTDIR\FileLens.exe" "%1"'
+    WriteRegStr HKCR "*\shell\FileLens" "" "Inspect with FileLens"
+    WriteRegStr HKCR "*\shell\FileLens" "Icon" "$INSTDIR\${PRODUCT_EXECUTABLE},0"
+    WriteRegStr HKCR "*\shell\FileLens\command" "" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
+    System::Call 'Shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
 SectionEnd
 
 Section "uninstall"
@@ -119,4 +120,5 @@ Section "uninstall"
     
     ; Remove Context Menu Entry
     DeleteRegKey HKCR "*\shell\FileLens"
+    System::Call 'Shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
 SectionEnd

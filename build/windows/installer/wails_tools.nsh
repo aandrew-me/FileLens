@@ -8,16 +8,16 @@
     !define INFO_PROJECTNAME "FileLens"
 !endif
 !ifndef INFO_COMPANYNAME
-    !define INFO_COMPANYNAME "FileLens"
+    !define INFO_COMPANYNAME "aandrew-me"
 !endif
 !ifndef INFO_PRODUCTNAME
     !define INFO_PRODUCTNAME "FileLens"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "1.0.0"
+    !define INFO_PRODUCTVERSION "1.0.2"
 !endif
 !ifndef INFO_COPYRIGHT
-    !define INFO_COPYRIGHT "Copyright........."
+    !define INFO_COPYRIGHT "Copyright 2026 aandrew-me"
 !endif
 !ifndef PRODUCT_EXECUTABLE
     !define PRODUCT_EXECUTABLE "${INFO_PROJECTNAME}.exe"
@@ -239,10 +239,74 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
 !macro wails.associateFiles
     ; Create file associations
     
+      !insertmacro APP_ASSOCIATE "mp4" "MP4 Video" "MP4 Video File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
+      !insertmacro APP_ASSOCIATE "mkv" "Matroska Video" "Matroska Video File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
+      !insertmacro APP_ASSOCIATE "mov" "QuickTime Video" "QuickTime Video File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
+      !insertmacro APP_ASSOCIATE "avi" "AVI Video" "AVI Video File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
+      !insertmacro APP_ASSOCIATE "webm" "WebM Video" "WebM Video File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
+      !insertmacro APP_ASSOCIATE "mp3" "MP3 Audio" "MP3 Audio File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
+      !insertmacro APP_ASSOCIATE "flac" "FLAC Audio" "FLAC Audio File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
+      !insertmacro APP_ASSOCIATE "wav" "WAV Audio" "WAV Audio File" "$INSTDIR\appicon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+
+      File "..\appicon.ico"
+    
 !macroend
 
 !macro wails.unassociateFiles
     ; Delete app associations
+    
+      !insertmacro APP_UNASSOCIATE "mp4" "MP4 Video"
+
+      Delete "$INSTDIR\appicon.ico"
+    
+      !insertmacro APP_UNASSOCIATE "mkv" "Matroska Video"
+
+      Delete "$INSTDIR\appicon.ico"
+    
+      !insertmacro APP_UNASSOCIATE "mov" "QuickTime Video"
+
+      Delete "$INSTDIR\appicon.ico"
+    
+      !insertmacro APP_UNASSOCIATE "avi" "AVI Video"
+
+      Delete "$INSTDIR\appicon.ico"
+    
+      !insertmacro APP_UNASSOCIATE "webm" "WebM Video"
+
+      Delete "$INSTDIR\appicon.ico"
+    
+      !insertmacro APP_UNASSOCIATE "mp3" "MP3 Audio"
+
+      Delete "$INSTDIR\appicon.ico"
+    
+      !insertmacro APP_UNASSOCIATE "flac" "FLAC Audio"
+
+      Delete "$INSTDIR\appicon.ico"
+    
+      !insertmacro APP_UNASSOCIATE "wav" "WAV Audio"
+
+      Delete "$INSTDIR\appicon.ico"
     
 !macroend
 

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -11,7 +13,7 @@ import (
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx         context.Context
 	startupFile string
 }
 
@@ -26,6 +28,19 @@ func NewApp(startFile string) *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Check if ffprobe exists alongside the executable
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		probeName := "ffprobe"
+		if runtimeOS := os.Getenv("OS"); runtimeOS == "Windows_NT" || filepath.Ext(exePath) == ".exe" {
+			probeName = "ffprobe.exe"
+		}
+		localProbe := filepath.Join(exeDir, probeName)
+		if _, err := os.Stat(localProbe); err == nil {
+			ffprobe.SetFFProbeBinPath(localProbe)
+		}
+	}
 }
 
 // SelectFile opens a native file dialog and returns the selected path

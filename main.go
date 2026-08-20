@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"os"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -17,8 +18,12 @@ var assets embed.FS
 
 func main() {
 	startFile := ""
-	if len(os.Args) > 1 {
-		startFile = os.Args[1]
+	if len(os.Args) > 1 && os.Args[1] != "" {
+		if abs, err := filepath.Abs(os.Args[1]); err == nil {
+			startFile = abs
+		} else {
+			startFile = os.Args[1]
+		}
 	}
 
 	app := NewApp(startFile)

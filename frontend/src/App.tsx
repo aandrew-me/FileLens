@@ -117,9 +117,7 @@ function App() {
 	const [isDragging, setIsDragging] = useState(false);
 
 	useEffect(() => {
-		OnFileDrop((x, y, paths) => {
-			console.log("Dropped at coordinates:", x, y);
-
+		OnFileDrop((_x, _y, paths) => {
 			setIsDragging(false);
 
 			if (paths && paths.length > 0) {
@@ -158,20 +156,7 @@ function App() {
 		e.stopPropagation();
 	};
 
-	// Handle Context Menu Startup
-	useEffect(() => {
-		const init = async () => {
-			const startPath = await GetStartupFile();
-			if (startPath && startPath !== "") {
-				setFilePath(startPath);
-				analyze(startPath);
-			}
-		};
-		init();
-	}, []);
-
 	const handleSelectFile = async () => {
-		setError("");
 		try {
 			const path = await SelectFile();
 			if (path) {
@@ -185,15 +170,29 @@ function App() {
 
 	const analyze = async (path: string) => {
 		setLoading(true);
+		setError("");
 		setMetaData(null);
 		try {
 			const data = await GetVideoMetadata(path);
 			setMetaData(data);
 		} catch (err: any) {
-			setError("Could not probe file. " + err);
+			setError("Could not probe file. " + (err?.message || err));
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	// Helper: Calculate stream framerate
+	const formatFPS = (stream: any) => {
+		const rateStr = stream.r_frame_rate && stream.r_frame_rate !== "0/0"
+			? stream.r_frame_rate
+			: stream.avg_frame_rate;
+		if (!rateStr || rateStr === "0/0") return null;
+		const [num, den] = rateStr.split("/").map(Number);
+		if (!den || isNaN(num) || isNaN(den)) return null;
+		const fps = num / den;
+		if (fps <= 0) return null;
+		return `${fps % 1 === 0 ? fps : fps.toFixed(2)} FPS`;
 	};
 
 	// Helper: Formats bytes
@@ -426,16 +425,16 @@ function App() {
 
 												{stream.codec_type === "video" && (
 													<>
-														<span className="meta-tag">
-															{stream.width}×{stream.height}
-														</span>
-														<span className="meta-tag">
-															{(() => {
-																const [num, den] = (stream.r_frame_rate || "0/1").split("/").map(Number);
-																const fps = den !== 0 ? (num / den) : 0;
-																return `${fps % 1 === 0 ? fps : fps.toFixed(2)} FPS`;
-															})()}
-														</span>
+														{stream.width && stream.height && (
+															<span className="meta-tag">
+																{stream.width}×{stream.height}
+															</span>
+														)}
+														{formatFPS(stream) && (
+															<span className="meta-tag">
+																{formatFPS(stream)}
+															</span>
+														)}
 													</>
 												)}
 
